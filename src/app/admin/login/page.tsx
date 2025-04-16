@@ -43,11 +43,13 @@ export default function AdminLoginPage() {
         throw new Error("Access denied. Administrator privileges required.");
       }
 
-      // --- Login successful ---
-      if (data.token) {
-        login(data.token); // Store token using AuthContext
-        // Redirect to a default admin page (e.g., dashboard or user list)
-        router.push("/admin/users"); // Or '/admin/dashboard'
+ 
+      if (data.token && data.user) {
+       login(data.token, {
+         id: data.user.id, 
+         role: data.user.role, 
+       });
+       router.push("/admin/users");
       } else {
         throw new Error("Login successful, but no token received.");
       }

@@ -17,7 +17,7 @@ interface ReceivedMessage {
 }
 
 export default function WebSocketTestPage() {
-  const { token, isLoading: isAuthLoading } = useAuth();
+  const { token, user, isLoading: isAuthLoading } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [messageInput, setMessageInput] = useState("");
   const [receivedMessages, setReceivedMessages] = useState<ReceivedMessage[]>(
@@ -37,8 +37,15 @@ export default function WebSocketTestPage() {
     console.log("Attempting to connect WebSocket...");
     setSocketError(null);
     const backendUrl =
-      process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace(/^http/, "ws") ||
-      "ws://localhost:5001/"; // Fallback
+      process.env.NEXT_PUBLIC_BACKEND_API_URL?.split("/api")[0].replace(
+        /^http/,
+        "ws"
+      ) || "ws://localhost:5001/"; // Fallback
+
+    console.log(
+      `WS Client: Attempting to connect to ${backendUrl} (default path) with token: ${!!token}`
+    );
+    setSocketError(null);
 
     const newSocket = io(backendUrl, {
       auth: {
@@ -71,6 +78,10 @@ export default function WebSocketTestPage() {
     });
 
     newSocket.on("receiveMessage", (data: ReceivedMessage) => {
+      console.log(
+        "WS Client: 'receiveMessage' event triggered with data:",
+        data
+      );
       console.log("Message received from server:", data);
 
       setReceivedMessages((prevMessages) => [data, ...prevMessages]);
@@ -97,11 +108,11 @@ export default function WebSocketTestPage() {
   }, [connectSocket]);
   const handleSendMessage = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim() || !user) return;
 
     if (socketRef.current && isConnected) {
       const payload = {
-        // recipientId: decodedUserId, // Send to self if you have userId
+        recipientId: user.id, // Send to self if you have userId or change it to decodedUserId for another user
         message: messageInput,
       };
       console.log("Sending message:", payload);
